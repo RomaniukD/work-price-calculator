@@ -1,0 +1,296 @@
+.job-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e9ecef;
+  margin-bottom: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100vw;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.job-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.job-table thead {
+  background-color: #34495e;
+  color: white;
+}
+
+.job-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.85rem;
+}
+
+.job-table tbody tr {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.job-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.job-table td {
+  padding: 1rem;
+  color: #2c3e50;
+}
+
+.job-table td.final-price {
+  font-weight: 600;
+  color: #27ae60;
+  font-size: 1.05rem;
+}
+
+.btn-delete {
+  padding: 0.5rem 0.75rem;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.btn-delete:hover {
+  background-color: #c0392b;
+  transform: scale(1.05);
+}
+
+.btn-delete:active {
+  transform: scale(0.98);
+}
+
+.table-footer {
+  background-color: #f8f9fa;
+  padding: 1.5rem 1rem;
+  border-top: 2px solid #e9ecef;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.total-price {
+  font-size: 1.2rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.total-value {
+  color: #27ae60;
+  font-size: 1.3rem;
+  margin-left: 0.5rem;
+}
+
+.empty-message {
+  padding: 3rem;
+  text-align: center;
+  color: #6c757d;
+  font-size: 1.1rem;
+  background-color: #f8f9fa;
+}
+
+/* Hide "Дія" column when printing */
+@media print {
+  .job-table th:nth-child(7),
+  .job-table td:nth-child(7) {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .job-table {
+    font-size: 0.85rem;
+  }
+
+  .job-table th,
+  .job-table td {
+    padding: 0.75rem;
+  }
+
+  .btn-delete {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .table-footer {
+    padding: 1rem;
+  }
+
+  .total-price {
+    font-size: 1rem;
+  }
+
+  .total-value {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .job-table-container {
+    border: none;
+  }
+
+  .job-table {
+    font-size: 0.8rem;
+  }
+
+  .job-table thead {
+    font-size: 0.75rem;
+  }
+
+  .job-table th {
+    padding: 0.5rem 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .job-table td {
+    padding: 0.5rem 0.4rem;
+  }
+
+  .btn-delete {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .table-footer {
+    padding: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .total-price {
+    font-size: 0.95rem;
+  }
+
+  .total-value {
+    font-size: 1rem;
+    margin-left: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .job-table-container {
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #e9ecef;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .job-table {
+    font-size: 0.75rem;
+    width: 100%;
+    min-width: 100%;
+    border-collapse: collapse;
+  }
+  }
+
+  .job-table thead {
+    font-size: 0.7rem;
+  }
+
+  .job-table th {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.7rem;
+  }
+
+  .job-table td {
+    padding: 0.4rem 0.3rem;
+  }
+
+  .job-table td.final-price {
+    font-size: 0.9rem;
+  }
+
+  .btn-delete {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.65rem;
+  }
+
+  .table-footer {
+    padding: 0.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .total-price {
+    font-size: 0.9rem;
+  }
+
+  .total-value {
+    font-size: 0.95rem;
+  }
+
+  .empty-message {
+    padding: 2rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+@media print {
+  .btn-delete,
+  .button-group {
+    display: none !important;
+  }
+
+  .job-table {
+    margin-bottom: 2rem;
+  }
+
+  .job-table thead {
+    background-color: #34495e;
+    color: white;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .job-table td.final-price {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .table-footer {
+    margin-top: 1rem;
+    break-inside: avoid;
+  }
+}
+
+@media (max-width: 768px) {
+  .job-table {
+    font-size: 0.85rem;
+  }
+
+  .job-table th,
+  .job-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .btn-delete {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}

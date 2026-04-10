@@ -1,0 +1,7 @@
+/* Global styles will be handled by component-specific CSS */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+

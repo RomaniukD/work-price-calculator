@@ -1,0 +1,293 @@
+.price-calculator {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem 0;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.calculator-header {
+  text-align: center;
+  color: white;
+  margin-bottom: 3rem;
+  padding: 2rem 1rem;
+}
+
+.calculator-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.calculator-header p {
+  font-size: 1.1rem;
+  opacity: 0.95;
+  margin: 0;
+  font-weight: 300;
+}
+
+.calculator-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.form-section,
+.table-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.form-section h2,
+.table-section h2 {
+  margin-top: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  flex: 1;
+  min-width: 150px;
+  text-align: center;
+}
+
+.btn-print {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-print:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-pdf {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.btn-pdf:hover {
+  background-color: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 1.5rem;
+  color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+@media (max-width: 1024px) {
+  .calculator-container {
+    grid-template-columns: 1fr;
+  }
+
+  .calculator-header h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .price-calculator {
+    padding: 1rem 0;
+  }
+
+  .calculator-header {
+    margin-bottom: 2rem;
+    padding: 1.5rem 1rem;
+  }
+
+  .calculator-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .calculator-header p {
+    font-size: 0.95rem;
+  }
+
+  .calculator-container {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .form-section,
+  .table-section {
+    padding: 1.5rem;
+  }
+
+  .button-group {
+    gap: 0.5rem;
+  }
+
+  .btn {
+    min-width: 120px;
+  }
+}
+
+@media print {
+  .price-calculator {
+    background: white;
+    padding: 0;
+  }
+
+  .calculator-header {
+    page-break-after: avoid;
+  }
+
+  .calculator-container {
+    grid-template-columns: 1fr;
+    gap: 0;
+    max-width: 100%;
+  }
+
+  .form-section {
+    display: none;
+  }
+
+  .table-section {
+    background: white;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .button-group {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .price-calculator {
+    padding: 0.5rem 0;
+  }
+
+  .calculator-header {
+    margin-bottom: 1.5rem;
+    padding: 1rem 0.5rem;
+  }
+
+  .calculator-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .calculator-header p {
+    font-size: 0.85rem;
+  }
+
+  .calculator-container {
+    gap: 1rem;
+    padding: 0 0.25rem;
+  }
+
+  .form-section,
+  .table-section {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .form-section h2,
+  .table-section h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .button-group {
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .btn {
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    min-width: 100px;
+    flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .price-calculator {
+    padding: 0.25rem 0;
+  }
+
+  .calculator-header {
+    margin-bottom: 1rem;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .calculator-header h1 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .calculator-header p {
+    font-size: 0.8rem;
+  }
+
+  .calculator-container {
+    gap: 0.75rem;
+    padding: 0;
+  }
+
+  .form-section,
+  .table-section {
+    padding: 0.75rem;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .form-section h2,
+  .table-section h2 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .button-group {
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .btn {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+    min-width: auto;
+  }
+}
