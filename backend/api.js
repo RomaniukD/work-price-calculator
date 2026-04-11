@@ -4,43 +4,30 @@ const { updatePrices, syncStructure, getDemoData, saveToDatabase } = require('./
 
 const router = express.Router();
 
-// GET /categories - returns all categories with subcategories and tasks
 router.get('/categories', async (req, res) => {
   try {
-    // Get all categories
-    const categories = await db_all('SELECT * FROM categories ORDER BY name');
-    const result = [];
-    
-    for (const category of categories) {
-      // Get subcategories for this category
-      const subcategories = await db_all(
-        'SELECT * FROM subcategories WHERE category_id = ? ORDER BY name',
-        [category.id]
-      );
-      
-      const subcategoriesData = [];
-      
-      for (const subcategory of subcategories) {
-        // Get tasks for this subcategory
-        const tasks = await db_all(
-          'SELECT * FROM tasks WHERE subcategory_id = ? ORDER BY name',
-          [subcategory.id]
-        );
-        
-        subcategoriesData.push({
-          id: subcategory.id,
-          name: subcategory.name,
-          href: subcategory.href,
-          tasks: tasks
-        });
-      }
-      
-      result.push({
-        id: category.id,
-        name: category.name,
-        subcategories: subcategoriesData
+    // Single query with nested relations using Supabase
+    const { data, error } = await require('./database').db.from('categories')
+      .select('id, name, subcategories(id, name, href, tasks(*))')
+      .order('name', { ascending: true })
+      .then(result => {
+        if (result.error) throw result.error;
+        return result;
       });
-    }
+
+    if (error) throw error;
+
+    // Transform flat data into nested structure if needed
+    const result = data.map(category => ({
+      id: category.id,
+      name: category.name,
+      subcategories: (category.subcategories || []).map(sub => ({
+        id: sub.id,
+        name: sub.name,
+        href: sub.href,
+        tasks: sub.tasks || []
+      }))
+    }));
 
     return res.json(result);
   } catch (error) {
