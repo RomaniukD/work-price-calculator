@@ -1,4 +1,3 @@
-import React from 'react';
 import './JobTable.css';
 
 const JobTable = ({ jobs, onDeleteJob }) => {

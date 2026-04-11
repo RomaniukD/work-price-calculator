@@ -1,9 +1,9 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
 const { db_run, db_get, db_all, clearDatabase } = require("./database");
-const config = require("./config");
-const sourceUrl = "https://www.rabotniki.ua/"
+require('dotenv').config();
 
+const sourceUrl = process.env.SOURCE_URL;
 
 let categoryCounter = 0;
 let subcategoryCounter = 0;
@@ -20,9 +20,9 @@ const generateSubcategoryId = () => `subcat_${++subcategoryCounter}`;
 const generateTaskId = () => `task_${++taskCounter}`;
 
 // Parse tasks from a subcategory page
-const parseSubcategoryTasks = async (baseUrl, subcategoryHref) => {
+const parseSubcategoryTasks = async (subcategoryHref) => {
   try {
-    const fullUrl = `${baseUrl}${subcategoryHref}`;
+    const fullUrl = `${sourceUrl}${subcategoryHref}`;
     console.log(`Fetching tasks from: ${fullUrl}`);
     
     const response = await axios.get(fullUrl);
@@ -59,77 +59,77 @@ const parseSubcategoryTasks = async (baseUrl, subcategoryHref) => {
 };
 
 // Parse categories and subcategories from source website (for initial setup)
-// const parseWebsiteStructure = async () => {
-//   const url = `${sourceUrl}uk/price`;
-//   try {
-//     console.log("Fetching website structure:", url);
-//     const response = await axios.get(url);
-//     const $ = cheerio.load(response.data);
+const parseWebsiteStructure = async () => {
+  const url = `${sourceUrl}uk/price`;
+  try {
+    console.log("Fetching website structure:", url);
+    const response = await axios.get(url);
+    const $ = cheerio.load(response.data);
 
-//     const data = [];
-//     resetIdCounters();
+    const data = [];
+    resetIdCounters();
 
-//     console.log("Looking for categories with selector: div.card.border-primary.mb-4.shadow-sm");
-//     const categoryElements = $("div.card.border-primary.mb-4.shadow-sm");
-//     console.log(`Found ${categoryElements.length} category elements`);
+    console.log("Looking for categories with selector: div.card.border-primary.mb-4.shadow-sm");
+    const categoryElements = $("div.card.border-primary.mb-4.shadow-sm");
+    console.log(`Found ${categoryElements.length} category elements`);
 
-//     $("div.card.border-primary.mb-4.shadow-sm").each((catIndex, categoryEl) => {
-//       const categoryName = $(categoryEl)
-//         .find("h4 span.text-uppercase")
-//         .text()
-//         .trim();
+    $("div.card.border-primary.mb-4.shadow-sm").each((catIndex, categoryEl) => {
+      const categoryName = $(categoryEl)
+        .find("h4 span.text-uppercase")
+        .text()
+        .trim();
 
-//       console.log(`Category ${catIndex}: "${categoryName}"`);
+      console.log(`Category ${catIndex}: "${categoryName}"`);
       
-//       if (!categoryName) {
-//         console.log(`Skipping category ${catIndex} - no name found`);
-//         return;
-//       }
+      if (!categoryName) {
+        console.log(`Skipping category ${catIndex} - no name found`);
+        return;
+      }
 
-//       const categoryId = generateCategoryId();
-//       const category = {
-//         id: categoryId,
-//         name: categoryName,
-//         subcategories: [],
-//       };
+      const categoryId = generateCategoryId();
+      const category = {
+        id: categoryId,
+        name: categoryName,
+        subcategories: [],
+      };
 
-//       const subcategoryElements = $(categoryEl).find("li.col-md-6.mb-1.text-truncate");
-//       console.log(`  Found ${subcategoryElements.length} subcategories in "${categoryName}"`);
+      const subcategoryElements = $(categoryEl).find("li.col-md-6.mb-1.text-truncate");
+      console.log(`  Found ${subcategoryElements.length} subcategories in "${categoryName}"`);
 
-//       $(categoryEl)
-//         .find("li.col-md-6.mb-1.text-truncate")
-//         .each((subIndex, subEl) => {
-//           const subcategoryName = $(subEl).find("a.text-body").text().trim();
-//           const subCategoryHref = $(subEl).find("a.text-body").attr("href");
+      $(categoryEl)
+        .find("li.col-md-6.mb-1.text-truncate")
+        .each((subIndex, subEl) => {
+          const subcategoryName = $(subEl).find("a.text-body").text().trim();
+          const subCategoryHref = $(subEl).find("a.text-body").attr("href");
           
-//           console.log(`    Subcategory ${subIndex}: "${subcategoryName}" href="${subCategoryHref}"`);
+          console.log(`    Subcategory ${subIndex}: "${subcategoryName}" href="${subCategoryHref}"`);
           
-//           if (!subcategoryName) {
-//             console.log(`    Skipping - no name`);
-//             return;
-//           }
+          if (!subcategoryName) {
+            console.log(`    Skipping - no name`);
+            return;
+          }
 
-//           const subcategoryId = generateSubcategoryId();
-//           const subcategory = {
-//             id: subcategoryId,
-//             categoryId: categoryId,
-//             name: subcategoryName,
-//             href: subCategoryHref,
-//             tasks: [],
-//           };
+          const subcategoryId = generateSubcategoryId();
+          const subcategory = {
+            id: subcategoryId,
+            categoryId: categoryId,
+            name: subcategoryName,
+            href: subCategoryHref,
+            tasks: [],
+          };
 
-//           category.subcategories.push(subcategory);
-//         });
-//         data.push(category);
-//       });
+          category.subcategories.push(subcategory);
+        });
+        data.push(category);
+      });
       
-//       saveToDatabase(data)
-//     return data;
-//   } catch (error) {
-//     console.error("Error parsing website structure:", error.message);
-//     throw error;
-//   }
-// };
+      saveToDatabase(data)
+    return data;
+  } catch (error) {
+    console.error("Error parsing website structure:", error.message);
+    throw error;
+  }
+};
 
 // Fetch categories and subcategories from DB, then parse tasks from website
 const parseWebsite = async (baseUrl) => {
@@ -158,7 +158,7 @@ const parseWebsite = async (baseUrl) => {
         // Parse tasks from the subcategory URL
         if (subcategory.href) {
           try {
-            const tasks = await parseSubcategoryTasks(baseUrl, subcategory.href);
+            const tasks = await parseSubcategoryTasks(subcategory.href);
             subcategoryData.tasks = tasks;
             console.log(`Found ${tasks.length} tasks in ${subcategory.name}`);
           } catch (error) {
@@ -436,7 +436,7 @@ const getDemoData = () => {
 
 module.exports = {
   parseWebsite,
-  // parseWebsiteStructure,
+  parseWebsiteStructure,
   saveToDatabase,
   updatePrices,
   syncStructure,

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { fetchSubcategories, fetchTasks } from '../services/api';
 import './JobForm.css';
 
 const JobForm = ({ categories, onAddJob }) => {

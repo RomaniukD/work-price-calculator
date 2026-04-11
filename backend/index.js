@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const { initializeDatabase } = require('./database');
 const api = require('./api');
 const config = require('./config');
 
@@ -11,8 +10,6 @@ const PORT = config.port;
 app.use(express.json());
 app.use(cors());
 
-// Initialize database
-initializeDatabase();
 
 // API routes
 app.use('/api', api);

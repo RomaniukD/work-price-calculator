@@ -1,129 +1,209 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
-const dbPath = path.join(__dirname, 'prices.db');
+require('dotenv').config();
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err);
-  } else {
-    console.log('Connected to SQLite database');
-  }
-});
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
-// Keep database connection open
-db.configure('busyTimeout', 10000);
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing SUPABASE_URL or SUPABASE_KEY environment variables');
+}
 
-// Enable WAL mode for better concurrency
-db.run('PRAGMA journal_mode = WAL', (err) => {
-  if (err) console.error('Error enabling WAL mode:', err);
-  else console.log('WAL mode enabled');
-});
+const db = createClient(supabaseUrl, supabaseKey);
 
-// Initialize database schema
-const initializeDatabase = () => {
-  db.serialize(() => {
-    // Create categories table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `, (err) => {
-      if (err) console.error('Error creating categories table:', err);
-    });
-
-    // Create subcategories table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS subcategories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        category_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        href TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
-        UNIQUE(category_id, name)
-      )
-    `, (err) => {
-      if (err) console.error('Error creating subcategories table:', err);
-    });
-
-    // Create tasks table (роботи/services)
-    db.run(`
-      CREATE TABLE IF NOT EXISTS tasks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        subcategory_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        price REAL NOT NULL,
-        unit TEXT DEFAULT 'грн/m^2',
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE,
-        UNIQUE(subcategory_id, name)
-      )
-    `, (err) => {
-      if (err) {
-        console.error('Error creating tasks table:', err);
-      } else {
-        console.log('Database schema initialized');
-      }
-    });
-  });
-};
+console.log('Connected to Supabase database');
 
 // Helper functions for database operations
-const db_run = (sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
-      if (err) reject(err);
-      else resolve({ id: this.lastID, changes: this.changes });
-    });
-  });
+// Note: These functions parse SQL queries and convert them to Supabase operations
+
+const db_run = async (sql, params = []) => {
+  try {
+    console.log('db_run called with:', { sql, params });
+    
+    // Parse INSERT statements
+    const insertMatch = sql.match(/INSERT INTO (\w+)\s*\((.*?)\)\s*VALUES\s*\((.*?)\)/i);
+    if (insertMatch) {
+      const table = insertMatch[1];
+      const columns = insertMatch[2].split(',').map(s => s.trim());
+      
+      const values = {};
+      columns.forEach((col, idx) => {
+        values[col] = params[idx];
+      });
+      
+      console.log(`Inserting into ${table}:`, values);
+      const { data, error } = await db.from(table).insert([values]).select();
+      if (error) {
+        console.error(`INSERT error for table ${table}:`, error.message);
+        throw error;
+      }
+      
+      const insertedId = data?.[0]?.id;
+      console.log(`Inserted into ${table}, ID:`, insertedId, 'Full data:', data?.[0]);
+      return { id: insertedId, changes: 1 };
+    }
+    
+    // Parse UPDATE statements
+    const updateMatch = sql.match(/UPDATE (\w+)\s+SET\s+(.*?)\s+WHERE\s+(.*)/i);
+    if (updateMatch) {
+      const table = updateMatch[1];
+      const setClause = updateMatch[2];
+      const whereClause = updateMatch[3];
+      
+      console.log('UPDATE parsing:', { setClause, whereClause });
+      
+      const updates = {};
+      const parts = setClause.split(',').map(s => s.trim());
+      let paramIdx = 0;
+      
+      // Only process SET parts that have ? placeholders
+      parts.forEach(part => {
+        if (part.includes('?')) {
+          const [col] = part.split('=').map(s => s.trim());
+          updates[col] = params[paramIdx++];
+          console.log(`SET ${col} = params[${paramIdx - 1}] = ${params[paramIdx - 1]}`);
+        } else if (part.includes('CURRENT_TIMESTAMP')) {
+          // Handle CURRENT_TIMESTAMP specially - don't consume a parameter
+          const [col] = part.split('=').map(s => s.trim());
+          updates[col] = 'CURRENT_TIMESTAMP';
+          console.log(`SET ${col} = CURRENT_TIMESTAMP (no param)`);
+        }
+      });
+      
+      // Now process WHERE clause - remaining params are for WHERE
+      const whereMatch = whereClause.match(/(\w+)\s*=\s*\?/);
+      if (whereMatch) {
+        const whereCol = whereMatch[1];
+        const whereVal = params[paramIdx];
+        
+        console.log(`WHERE ${whereCol} = params[${paramIdx}] = ${whereVal}`);
+        
+        // Handle CURRENT_TIMESTAMP in updates by removing it from updates object
+        // and letting Supabase use its default
+        if (updates.updated_at === 'CURRENT_TIMESTAMP') {
+          delete updates.updated_at;
+        }
+        
+        const { data, error } = await db
+          .from(table)
+          .update(updates)
+          .eq(whereCol, whereVal)
+          .select();
+        
+        if (error) {
+          console.error(`UPDATE error for WHERE ${whereCol}=${whereVal}:`, error.message);
+          throw error;
+        }
+        return { id: data?.[0]?.id, changes: data?.length || 0 };
+      }
+    }
+    
+    throw new Error('Unsupported SQL operation: ' + sql);
+  } catch (err) {
+    console.error('db_run error:', err.message);
+    throw err;
+  }
 };
 
-const db_get = (sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
+const db_get = async (sql, params = []) => {
+  try {
+    // Parse SELECT statements
+    const selectMatch = sql.match(/SELECT\s+(.*?)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.*?))?(?:\s+LIMIT)?$/i);
+    if (selectMatch) {
+      const columns = selectMatch[1].trim();
+      const table = selectMatch[2];
+      const whereClause = selectMatch[3];
+      
+      let query = db.from(table).select(columns === '*' ? '*' : columns);
+      
+      if (whereClause) {
+        // Split by AND to handle multiple conditions
+        const conditions = whereClause.split(/\s+AND\s+/i);
+        let paramIdx = 0;
+        
+        for (const condition of conditions) {
+          const condMatch = condition.match(/(\w+)\s*=\s*\?/i);
+          if (condMatch) {
+            const col = condMatch[1];
+            const val = params[paramIdx++];
+            query = query.eq(col, val);
+          }
+        }
+      }
+      
+      const { data, error } = await query.limit(1).single();
+      if (error && error.code === 'PGRST116') return null;
+      if (error) throw error;
+      return data;
+    }
+    
+    throw new Error('Unsupported SELECT query: ' + sql);
+  } catch (err) {
+    console.error('db_get error:', err.message);
+    throw err;
+  }
 };
 
-const db_all = (sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows || []);
-    });
-  });
+const db_all = async (sql, params = []) => {
+  try {
+    // Parse SELECT statements
+    const selectMatch = sql.match(/SELECT\s+(.*?)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.*?))?(?:\s+ORDER BY\s+(.*?))?$/i);
+    if (selectMatch) {
+      const columns = selectMatch[1].trim();
+      const table = selectMatch[2];
+      const whereClause = selectMatch[3];
+      const orderClause = selectMatch[4];
+      
+      let query = db.from(table).select(columns === '*' ? '*' : columns);
+      
+      if (whereClause) {
+        // Split by AND to handle multiple conditions
+        const conditions = whereClause.split(/\s+AND\s+/i);
+        let paramIdx = 0;
+        
+        for (const condition of conditions) {
+          const condMatch = condition.match(/(\w+)\s*=\s*\?/i);
+          if (condMatch) {
+            const col = condMatch[1];
+            const val = params[paramIdx++];
+            query = query.eq(col, val);
+          }
+        }
+      }
+      
+      if (orderClause) {
+        const orderMatch = orderClause.match(/(\w+)(?:\s+(ASC|DESC))?/i);
+        if (orderMatch) {
+          const ascending = !orderMatch[2] || orderMatch[2].toUpperCase() === 'ASC';
+          query = query.order(orderMatch[1], { ascending });
+        }
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    }
+    
+    throw new Error('Unsupported SELECT query: ' + sql);
+  } catch (err) {
+    console.error('db_all error:', err.message);
+    throw err;
+  }
 };
 
 // Clear all data from database
-const clearDatabase = () => {
-  return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('DELETE FROM tasks', (err) => {
-        if (err) reject(err);
-        else {
-          db.run('DELETE FROM subcategories', (err) => {
-            if (err) reject(err);
-            else {
-              db.run('DELETE FROM categories', (err) => {
-                if (err) reject(err);
-                else resolve();
-              });
-            };
-          });
-        }
-      });
-    });
-  });
+const clearDatabase = async () => {
+  try {
+    await db.from('tasks').delete().neq('id', 0);
+    await db.from('subcategories').delete().neq('id', 0);
+    await db.from('categories').delete().neq('id', 0);
+  } catch (err) {
+    throw err;
+  }
 };
 
 module.exports = {
   db,
-  initializeDatabase,
   db_run,
   db_get,
   db_all,
