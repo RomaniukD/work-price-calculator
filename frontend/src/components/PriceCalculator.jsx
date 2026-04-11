@@ -43,6 +43,11 @@ const PriceCalculator = () => {
     if (!tableRef.current) return;
 
     try {
+      // Add mobile-optimized class for reduced font sizes
+      const container = tableRef.current.closest('.job-table-container') || tableRef.current;
+      const originalStyle = container.getAttribute('style') || '';
+      container.style.fontSize = '0.75rem';
+
       // Hide delete buttons and "Дія" column for PDF
       const deleteButtons = tableRef.current.querySelectorAll('.btn-delete');
       const actionHeaderCell = tableRef.current.querySelector('th:nth-child(7)');
@@ -52,12 +57,15 @@ const PriceCalculator = () => {
       if (actionHeaderCell) actionHeaderCell.style.display = 'none';
       actionDataCells.forEach(cell => cell.style.display = 'none');
 
-      const canvas = await html2canvas(tableRef.current, {
+      // Generate canvas with better scale for mobile optimization
+      const canvas = await html2canvas(container, {
         backgroundColor: '#ffffff',
-        scale: 1,
+        scale: 2,
+        useCORS: true,
       });
 
-      // Show elements again
+      // Restore original styles
+      container.setAttribute('style', originalStyle);
       deleteButtons.forEach(btn => btn.style.display = 'block');
       if (actionHeaderCell) actionHeaderCell.style.display = '';
       actionDataCells.forEach(cell => cell.style.display = '');
@@ -73,13 +81,28 @@ const PriceCalculator = () => {
       // Remove margins and headers/footers
       pdf.setProperties({});
 
-      const imgWidth = 280;
+      // Adjust image width for better mobile viewing
+      const imgWidth = 270;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      
+      // Calculate positioning
+      let yPosition = 8;
+      pdf.addImage(imgData, 'PNG', 8, yPosition, imgWidth, imgHeight);
 
+      // Add total price at the end
       const totalPrice = jobs.reduce((sum, job) => sum + job.finalPrice, 0);
-      pdf.setFontSize(12);
-      pdf.text(`Загальна ціна: ${totalPrice.toFixed(2)} ₴`, 10, pdf.internal.pageSize.height - 10);
+      const pageHeight = pdf.internal.pageSize.height;
+      const finalYPosition = yPosition + imgHeight + 5;
+      
+      // Check if we need a new page for the total
+      if (finalYPosition > pageHeight - 15) {
+        pdf.addPage();
+        pdf.setFontSize(10);
+        pdf.text(`Загальна ціна: ${totalPrice.toFixed(2)} ₴`, 8, 10);
+      } else {
+        pdf.setFontSize(10);
+        pdf.text(`Загальна ціна: ${totalPrice.toFixed(2)} ₴`, 8, finalYPosition);
+      }
 
       pdf.save('jobs-list.pdf');
     } catch (error) {

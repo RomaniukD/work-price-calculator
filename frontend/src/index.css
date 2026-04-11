@@ -74,7 +74,6 @@ body {
 }
 
 @media print {
-  /* Remove body margins and padding */
   body,
   html {
     margin: 0;
@@ -93,6 +92,7 @@ body {
   .price-calculator {
     background: white;
     padding: 0;
+    min-height: auto;
   }
   
   /* Print table in full width */
@@ -115,7 +115,22 @@ body {
   
   .job-table-container {
     border: none;
-    margin-bottom: 1rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* Reduce font sizes for mobile PDF export */
+  .table-footer {
+    padding: 0.5rem 0.4rem;
+    background-color: white;
+    border-top: 1px solid #e9ecef;
+  }
+  
+  .total-price {
+    font-size: 0.85rem;
+  }
+  
+  .total-value {
+    font-size: 0.9rem;
   }
 }
 

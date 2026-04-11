@@ -111,6 +111,55 @@
   .job-table td:nth-child(7) {
     display: none;
   }
+  
+  /* Reduce font sizes for mobile PDF export */
+  .job-table {
+    font-size: 0.7rem;
+    width: 100%;
+  }
+  
+  .job-table th {
+    padding: 0.5rem 0.4rem;
+    font-size: 0.65rem;
+    font-weight: bold;
+    line-height: 1.2;
+  }
+  
+  .job-table td {
+    padding: 0.5rem 0.4rem;
+    font-size: 0.7rem;
+    line-height: 1.2;
+  }
+  
+  .job-table td.final-price {
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+  
+  .job-table tbody tr {
+    page-break-inside: avoid;
+  }
+  
+  .table-wrapper {
+    width: 100%;
+  }
+}
+
+/* Mobile print optimization for very small screens */
+@media print and (max-width: 600px) {
+  .job-table {
+    font-size: 0.65rem;
+  }
+  
+  .job-table th {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.6rem;
+  }
+  
+  .job-table td {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.65rem;
+  }
 }
 
 @media (max-width: 768px) {
