@@ -54,7 +54,7 @@ const PriceCalculator = () => {
 
       const canvas = await html2canvas(tableRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 1,
       });
 
       // Show elements again
@@ -67,7 +67,11 @@ const PriceCalculator = () => {
         orientation: 'landscape',
         unit: 'mm',
         format: 'a4',
+        compress: true,
       });
+      
+      // Remove margins and headers/footers
+      pdf.setProperties({});
 
       const imgWidth = 280;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;

@@ -49,6 +49,76 @@ body {
   }
 }
 
+/* Remove headers and footers when printing */
+@page {
+  margin: 10mm;
+  size: A4;
+  @bottom-left {
+    content: '';
+  }
+  @bottom-center {
+    content: '';
+  }
+  @bottom-right {
+    content: '';
+  }
+  @top-left {
+    content: '';
+  }
+  @top-center {
+    content: '';
+  }
+  @top-right {
+    content: '';
+  }
+}
+
+@media print {
+  /* Remove body margins and padding */
+  body,
+  html {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+  
+  /* Hide header and footer elements */
+  .calculator-header,
+  .form-section,
+  .button-group {
+    display: none;
+  }
+  
+  /* Remove color backgrounds for better printing */
+  .price-calculator {
+    background: white;
+    padding: 0;
+  }
+  
+  /* Print table in full width */
+  .table-section {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    background: white;
+  }
+  
+  .table-section h2 {
+    display: none;
+  }
+  
+  /* Ensure table displays properly */
+  .table-wrapper {
+    overflow: visible;
+  }
+  
+  .job-table-container {
+    border: none;
+    margin-bottom: 1rem;
+  }
+}
+
 body {
   margin: 0;
   padding: 0;
