@@ -203,7 +203,6 @@ const JobForm = ({ categories, onAddJob }) => {
             onChange={handlePriceChange}
             placeholder="Введіть ціну"
             required
-            disabled={!taskId}
           />
           {unit && <span className="price-unit">{unit}</span>}
         </div>

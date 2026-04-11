@@ -43,33 +43,100 @@ const PriceCalculator = () => {
     if (!tableRef.current) return;
 
     try {
-      // Add mobile-optimized class for reduced font sizes
       const container =
         tableRef.current.closest(".job-table-container") || tableRef.current;
+      const table = tableRef.current;
+
+      // Store original styles
       const originalStyle = container.getAttribute("style") || "";
-      container.style.fontSize = "0.5rem";
+      const originalTableStyle = table.getAttribute("style") || "";
+
+      // Apply fixed width and styles for consistent PDF rendering
+      container.style.width = "1200px";
+      container.style.maxWidth = "1200px";
+      container.style.overflow = "visible";
+      container.style.margin = "0";
+      container.style.padding = "0";
+
+      // Apply hardcoded table styles with absolute sizes
+      table.style.width = "100%";
+      table.style.borderCollapse = "collapse";
+      table.style.fontSize = "10px";
+      table.style.fontFamily = "Arial, sans-serif";
+      table.style.margin = "0";
+      table.style.padding = "0";
+
+      // Style table headers
+      const headers = table.querySelectorAll("th");
+      const headerStyles = [];
+      headers.forEach((th) => {
+        headerStyles.push(th.getAttribute("style") || "");
+        th.style.padding = "6px 4px";
+        th.style.textAlign = "left";
+        th.style.fontWeight = "bold";
+        th.style.fontSize = "9px";
+        th.style.backgroundColor = "#34495e";
+        th.style.color = "white";
+        th.style.border = "1px solid #2c3e50";
+        th.style.lineHeight = "1.2";
+      });
+
+      // Style table rows and cells
+      const rows = table.querySelectorAll("tbody tr");
+      const cellStyles = [];
+      rows.forEach((row) => {
+        row.style.borderBottom = "1px solid #e9ecef";
+
+        const cells = row.querySelectorAll("td");
+        cells.forEach((cell, index) => {
+          cellStyles.push(cell.getAttribute("style") || "");
+          cell.style.padding = "6px 4px";
+          cell.style.fontSize = "10px";
+          cell.style.color = "#2c3e50";
+          cell.style.border = "1px solid #e9ecef";
+          cell.style.lineHeight = "1.2";
+
+          // Final price column styling
+          if (cell.classList.contains("final-price")) {
+            cell.style.fontWeight = "bold";
+            cell.style.color = "#27ae60";
+            cell.style.fontSize = "11px";
+          }
+        });
+      });
 
       // Hide delete buttons and "Дія" column for PDF
-      const deleteButtons = tableRef.current.querySelectorAll(".btn-delete");
-      const actionHeaderCell =
-        tableRef.current.querySelector("th:nth-child(7)");
-      const actionDataCells =
-        tableRef.current.querySelectorAll("td:nth-child(7)");
+      const deleteButtons = table.querySelectorAll(".btn-delete");
+      const actionHeaderCell = table.querySelector("th:nth-child(7)");
+      const actionDataCells = table.querySelectorAll("td:nth-child(7)");
 
       deleteButtons.forEach((btn) => (btn.style.display = "none"));
       if (actionHeaderCell) actionHeaderCell.style.display = "none";
       actionDataCells.forEach((cell) => (cell.style.display = "none"));
 
-      // Generate canvas with better scale for mobile optimization
+      // Generate canvas with fixed width
       const canvas = await html2canvas(container, {
         backgroundColor: "#ffffff",
-        scale: 2,
+        scale: 1,
         useCORS: true,
+        logging: false,
+        width: 1200,
+        allowTaint: true,
       });
 
       // Restore original styles
       container.setAttribute("style", originalStyle);
-      deleteButtons.forEach((btn) => (btn.style.display = "block"));
+      table.setAttribute("style", originalTableStyle);
+
+      headers.forEach((th, index) => {
+        th.setAttribute("style", headerStyles[index]);
+      });
+
+      table.querySelectorAll("tbody tr td").forEach((cell, index) => {
+        cell.setAttribute("style", cellStyles[index]);
+      });
+
+      deleteButtons.forEach((btn) => (btn.style.display = ""));
       if (actionHeaderCell) actionHeaderCell.style.display = "";
       actionDataCells.forEach((cell) => (cell.style.display = ""));
 
@@ -81,29 +148,26 @@ const PriceCalculator = () => {
         compress: true,
       });
 
-      // Remove margins and headers/footers
       pdf.setProperties({});
 
-      // Adjust image width for better mobile viewing
-      const imgWidth = 270;
+      // Calculate image dimensions for PDF
+      const imgWidth = 280;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      // Calculate positioning
       let yPosition = 8;
       pdf.addImage(imgData, "PNG", 8, yPosition, imgWidth, imgHeight);
-      pdf.setFontSize(8);
+
       // Add total price at the end
       const totalPrice = jobs.reduce((sum, job) => sum + job.finalPrice, 0);
       const pageHeight = pdf.internal.pageSize.height;
       const finalYPosition = yPosition + imgHeight + 5;
 
-      // Check if we need a new page for the total
       if (finalYPosition > pageHeight - 15) {
         pdf.addPage();
-        pdf.setFontSize(8);
+        pdf.setFontSize(12);
         pdf.text(`Загальна ціна: ${totalPrice.toFixed(2)} ₴`, 8, 10);
       } else {
-        pdf.setFontSize(8);
+        pdf.setFontSize(12);
         pdf.text(
           `Загальна ціна: ${totalPrice.toFixed(2)} ₴`,
           8,
