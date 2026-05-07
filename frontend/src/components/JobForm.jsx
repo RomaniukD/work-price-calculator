@@ -1,51 +1,107 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './JobForm.css';
 
+const JOB_FORM_STORAGE_KEY = 'priceCalculator.jobForm';
+
+const DEFAULT_JOB_FORM = {
+  categoryId: '',
+  subcategoryId: '',
+  subcategoryName: '',
+  taskId: '',
+  taskName: '',
+  area: '',
+  price: '',
+  unit: '',
+};
+
+const readStoredJobForm = () => {
+  try {
+    const storedForm = localStorage.getItem(JOB_FORM_STORAGE_KEY);
+    return storedForm ? { ...DEFAULT_JOB_FORM, ...JSON.parse(storedForm) } : DEFAULT_JOB_FORM;
+  } catch (error) {
+    console.error('Error reading job form from localStorage:', error);
+    return DEFAULT_JOB_FORM;
+  }
+};
+
+const writeStoredJobForm = (formData) => {
+  try {
+    localStorage.setItem(JOB_FORM_STORAGE_KEY, JSON.stringify(formData));
+  } catch (error) {
+    console.error('Error writing job form to localStorage:', error);
+  }
+};
+
 const JobForm = ({ categories, onAddJob }) => {
-  const [categoryId, setCategoryId] = useState('');
-  const [subcategoryId, setSubcategoryId] = useState('');
-  const [subcategoryName, setSubcategoryName] = useState('');
-  const [taskId, setTaskId] = useState('');
-  const [taskName, setTaskName] = useState('');
-  const [area, setArea] = useState('');
-  const [price, setPrice] = useState('');
-  const [unit, setUnit] = useState('');
+  const [storedForm] = useState(readStoredJobForm);
+  const [categoryId, setCategoryId] = useState(storedForm.categoryId);
+  const [subcategoryId, setSubcategoryId] = useState(storedForm.subcategoryId);
+  const [subcategoryName, setSubcategoryName] = useState(storedForm.subcategoryName);
+  const [taskId, setTaskId] = useState(storedForm.taskId);
+  const [taskName, setTaskName] = useState(storedForm.taskName);
+  const [area, setArea] = useState(storedForm.area);
+  const [price, setPrice] = useState(storedForm.price);
+  const [unit, setUnit] = useState(storedForm.unit);
   const [subcategories, setSubcategories] = useState([]);
   const [tasks, setTasks] = useState([]);
 
+  useEffect(() => {
+    writeStoredJobForm({
+      categoryId,
+      subcategoryId,
+      subcategoryName,
+      taskId,
+      taskName,
+      area,
+      price,
+      unit,
+    });
+  }, [categoryId, subcategoryId, subcategoryName, taskId, taskName, area, price, unit]);
+
   // Update subcategories when category changes
   useEffect(() => {
-    if (categoryId) {
-      const subs = categories.find(cat => cat.id === parseInt(categoryId))?.subcategories || [];
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSubcategories(subs);
-      setSubcategoryId('');
-      setTasks([]);
-      setTaskId('');
-    } else {
+    if (!categoryId) {
       setSubcategories([]);
       setTasks([]);
+      return;
     }
-  }, [categoryId]);
+
+    if (!categories.length) return;
+
+    const subs = categories.find(cat => cat.id === parseInt(categoryId))?.subcategories || [];
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSubcategories(subs);
+  }, [categoryId, categories]);
 
   // Update tasks when subcategory changes
   useEffect(() => {
-    if (categoryId && subcategoryName) {
-      const subs = categories.find(cat => cat.id === parseInt(categoryId))?.subcategories || [];
-      const selectedSub = subs.find(sub => sub.name === subcategoryName);
-      const tsk = selectedSub?.tasks || [];
-
-      setTasks(tsk);
-      setTaskId('');
-      setTaskName('');
-      setPrice('');
-      setUnit('');
-    } else {
+    if (!categoryId || !subcategoryName) {
       setTasks([]);
-      setPrice('');
-      setUnit('');
+      return;
     }
-  }, [categoryId, subcategoryName, categories]);
+
+    if (!categories.length) return;
+
+    const subs = categories.find(cat => cat.id === parseInt(categoryId))?.subcategories || [];
+    const selectedSub = subs.find(sub => sub.name === subcategoryName);
+    const tsk = selectedSub?.tasks || [];
+    const selectedTask = tsk.find(tskItem => tskItem.name === taskName);
+
+    setTasks(tsk);
+    setSubcategoryId(selectedSub?.id || '');
+    setTaskId(selectedTask?.id || '');
+  }, [categoryId, subcategoryName, taskName, categories]);
+
+  const handleCategoryChange = useCallback((e) => {
+    setCategoryId(e.target.value);
+    setSubcategoryId('');
+    setSubcategoryName('');
+    setTaskId('');
+    setTaskName('');
+    setPrice('');
+    setUnit('');
+    setTasks([]);
+  }, []);
 
   const handleAreaChange = useCallback((e) => {
     const value = e.target.value;
@@ -66,6 +122,10 @@ const JobForm = ({ categories, onAddJob }) => {
   const handleSubcategoryChange = useCallback((e) => {
     const value = e.target.value;
     setSubcategoryName(value);
+    setTaskId('');
+    setTaskName('');
+    setPrice('');
+    setUnit('');
     
     // Try to find matching subcategory ID
     if (categoryId && value) {
@@ -117,6 +177,7 @@ const JobForm = ({ categories, onAddJob }) => {
       subcategoryName: subcategoryName,
       taskName: taskName,
       price: parseFloat(price),
+      unit,
       area: parseFloat(area),
       finalPrice: parseFloat(price) * parseFloat(area)
     };
@@ -134,7 +195,7 @@ const JobForm = ({ categories, onAddJob }) => {
     setUnit('');
     setSubcategories([]);
     setTasks([]);
-  }, [categoryId, subcategoryName, taskName, area, price, categories]);
+  }, [categoryId, subcategoryName, taskName, area, price, unit, categories]);
 
   return (
     <form className="job-form" onSubmit={handleSubmit}>
@@ -143,7 +204,7 @@ const JobForm = ({ categories, onAddJob }) => {
         <select
           id="category"
           value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
+          onChange={handleCategoryChange}
           required
         >
           <option value="">-- Виберіть категорію --</option>

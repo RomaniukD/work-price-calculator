@@ -1,14 +1,45 @@
 import React, { useState, useEffect, useRef } from "react";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import html2pdf from "html2pdf.js";
 import JobForm from "./JobForm";
 import JobTable from "./JobTable";
 import { fetchCategories } from "../services/api";
+import { buildPdfTable } from "../utils/pdfTable";
 import "./PriceCalculator.css";
+
+const JOBS_STORAGE_KEY = "priceCalculator.jobs";
+const CUSTOMER_STORAGE_KEY = "priceCalculator.customer";
+
+const DEFAULT_CUSTOMER = {
+  name: "",
+  phone: "",
+  email: "",
+  objectAddress: "",
+};
+
+const readStorageValue = (key, fallbackValue) => {
+  try {
+    const storedValue = localStorage.getItem(key);
+    return storedValue ? JSON.parse(storedValue) : fallbackValue;
+  } catch (error) {
+    console.error(`Error reading ${key} from localStorage:`, error);
+    return fallbackValue;
+  }
+};
+
+const writeStorageValue = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Error writing ${key} to localStorage:`, error);
+  }
+};
 
 const PriceCalculator = () => {
   const [categories, setCategories] = useState([]);
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs] = useState(() => readStorageValue(JOBS_STORAGE_KEY, []));
+  const [customer, setCustomer] = useState(() =>
+    readStorageValue(CUSTOMER_STORAGE_KEY, DEFAULT_CUSTOMER)
+  );
   const [loading, setLoading] = useState(true);
   const tableRef = useRef(null);
 
@@ -27,6 +58,14 @@ const PriceCalculator = () => {
     loadCategories();
   }, []);
 
+  useEffect(() => {
+    writeStorageValue(JOBS_STORAGE_KEY, jobs);
+  }, [jobs]);
+
+  useEffect(() => {
+    writeStorageValue(CUSTOMER_STORAGE_KEY, customer);
+  }, [customer]);
+
   const handleAddJob = (jobData) => {
     setJobs([...jobs, jobData]);
   };
@@ -35,147 +74,40 @@ const PriceCalculator = () => {
     setJobs(jobs.filter((job) => job.id !== jobId));
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleCustomerChange = (field, value) => {
+    setCustomer((currentCustomer) => ({
+      ...currentCustomer,
+      [field]: value,
+    }));
   };
 
   const handleExportPDF = async () => {
     if (!tableRef.current) return;
 
     try {
-      const container =
-        tableRef.current.closest(".job-table-container") || tableRef.current;
-      const table = tableRef.current;
-
-      // Store original styles
-      const originalStyle = container.getAttribute("style") || "";
-      const originalTableStyle = table.getAttribute("style") || "";
-
-      // Apply fixed width and styles for consistent PDF rendering
-      container.style.width = "1200px";
-      container.style.maxWidth = "1200px";
-      container.style.overflow = "visible";
-      container.style.margin = "0";
-      container.style.padding = "0";
-
-      // Apply hardcoded table styles with absolute sizes
-      table.style.width = "100%";
-      table.style.borderCollapse = "collapse";
-      table.style.fontSize = "10px";
-      table.style.fontFamily = "Arial, sans-serif";
-      table.style.margin = "0";
-      table.style.padding = "0";
-
-      // Style table headers
-      const headers = table.querySelectorAll("th");
-      const headerStyles = [];
-      headers.forEach((th) => {
-        headerStyles.push(th.getAttribute("style") || "");
-        th.style.padding = "6px 4px";
-        th.style.textAlign = "left";
-        th.style.fontWeight = "bold";
-        th.style.fontSize = "9px";
-        th.style.backgroundColor = "#34495e";
-        th.style.color = "white";
-        th.style.border = "1px solid #2c3e50";
-        th.style.lineHeight = "1.2";
-      });
-
-      // Style table rows and cells
-      const rows = table.querySelectorAll("tbody tr");
-      const cellStyles = [];
-      rows.forEach((row) => {
-        row.style.borderBottom = "1px solid #e9ecef";
-
-        const cells = row.querySelectorAll("td");
-        cells.forEach((cell, index) => {
-          cellStyles.push(cell.getAttribute("style") || "");
-          cell.style.padding = "6px 4px";
-          cell.style.fontSize = "10px";
-          cell.style.color = "#2c3e50";
-          cell.style.border = "1px solid #e9ecef";
-          cell.style.lineHeight = "1.2";
-
-          // Final price column styling
-          if (cell.classList.contains("final-price")) {
-            cell.style.fontWeight = "bold";
-            cell.style.color = "#27ae60";
-            cell.style.fontSize = "11px";
-          }
-        });
-      });
-
-      // Hide delete buttons and "Дія" column for PDF
-      const deleteButtons = table.querySelectorAll(".btn-delete");
-      const actionHeaderCell = table.querySelector("th:nth-child(7)");
-      const actionDataCells = table.querySelectorAll("td:nth-child(7)");
-
-      deleteButtons.forEach((btn) => (btn.style.display = "none"));
-      if (actionHeaderCell) actionHeaderCell.style.display = "none";
-      actionDataCells.forEach((cell) => (cell.style.display = "none"));
-
-      // Generate canvas with fixed width
-      const canvas = await html2canvas(container, {
-        backgroundColor: "#ffffff",
-        scale: 1,
-        useCORS: true,
-        logging: false,
-        width: 1200,
-        allowTaint: true,
-      });
-
-      // Restore original styles
-      container.setAttribute("style", originalStyle);
-      table.setAttribute("style", originalTableStyle);
-
-      headers.forEach((th, index) => {
-        th.setAttribute("style", headerStyles[index]);
-      });
-
-      table.querySelectorAll("tbody tr td").forEach((cell, index) => {
-        cell.setAttribute("style", cellStyles[index]);
-      });
-
-      deleteButtons.forEach((btn) => (btn.style.display = ""));
-      if (actionHeaderCell) actionHeaderCell.style.display = "";
-      actionDataCells.forEach((cell) => (cell.style.display = ""));
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "landscape",
-        unit: "mm",
-        format: "a4",
-        compress: true,
-      });
-
-      pdf.setProperties({});
-
-      // Calculate image dimensions for PDF
-      const imgWidth = 280;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let yPosition = 8;
-      pdf.addImage(imgData, "PNG", 8, yPosition, imgWidth, imgHeight);
-
-      // Add total price at the end
       const totalPrice = jobs.reduce((sum, job) => sum + job.finalPrice, 0);
-      const pageHeight = pdf.internal.pageSize.height;
-      const finalYPosition = yPosition + imgHeight + 5;
+      const pdfTable = buildPdfTable({
+        jobs,
+        customer,
+        tableWrapper: tableRef.current,
+        totalPrice,
+      });
 
-      if (finalYPosition > pageHeight - 15) {
-        pdf.addPage();
-        pdf.setFontSize(12);
-        pdf.text(`Загальна ціна: ${totalPrice.toFixed(2)} ₴`, 8, 10);
-      } else {
-        pdf.setFontSize(12);
-        pdf.text(
-          `Загальна ціна: ${totalPrice.toFixed(2)} ₴`,
-          8,
-          finalYPosition,
-        );
-      }
+      const options = {
+        margin: [10, 10, 10, 10],
+        filename: "koshtorys.pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: {
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+          compress: true,
+        },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+      };
 
-      pdf.save("jobs-list.pdf");
+      html2pdf().set(options).from(pdfTable).save();
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Помилка при сгенеруванні PDF");
@@ -197,6 +129,63 @@ const PriceCalculator = () => {
         <section className="form-section">
           <h2>Форма вибору роботи</h2>
           <JobForm categories={categories} onAddJob={handleAddJob} />
+
+          <div className="customer-form">
+            <h3>Дані замовника</h3>
+            <div className="customer-fields">
+              <div className="form-group">
+                <label htmlFor="customer-name">ПІБ / Назва компанії</label>
+                <input
+                  id="customer-name"
+                  type="text"
+                  value={customer.name}
+                  onChange={(event) =>
+                    handleCustomerChange("name", event.target.value)
+                  }
+                  placeholder="Введіть ім'я або назву"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="customer-phone">Телефон</label>
+                <input
+                  id="customer-phone"
+                  type="tel"
+                  value={customer.phone}
+                  onChange={(event) =>
+                    handleCustomerChange("phone", event.target.value)
+                  }
+                  placeholder="Введіть номер телефону"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="customer-email">Email</label>
+                <input
+                  id="customer-email"
+                  type="email"
+                  value={customer.email}
+                  onChange={(event) =>
+                    handleCustomerChange("email", event.target.value)
+                  }
+                  placeholder="Введіть email"
+                />
+              </div>
+
+              <div className="form-group customer-field-wide">
+                <label htmlFor="object-address">Адреса об'єкта</label>
+                <input
+                  id="object-address"
+                  type="text"
+                  value={customer.objectAddress}
+                  onChange={(event) =>
+                    handleCustomerChange("objectAddress", event.target.value)
+                  }
+                  placeholder="Введіть адресу виконання робіт"
+                />
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="table-section">
@@ -207,9 +196,6 @@ const PriceCalculator = () => {
 
           {jobs.length > 0 && (
             <div className="button-group">
-              <button onClick={handlePrint} className="btn btn-print">
-                🖨️ Друкувати таблицю
-              </button>
               <button onClick={handleExportPDF} className="btn btn-pdf">
                 📄 Зберегти як PDF
               </button>
