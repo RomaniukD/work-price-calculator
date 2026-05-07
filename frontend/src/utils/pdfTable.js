@@ -8,33 +8,10 @@ const PDF_COLUMNS = [
 
 const PDF_DETAILS = {
   title: "Кошторис на виконання будівельних робіт",
-  estimateNumber: `${Math.round(Math.random()*10000)}`,
   contractor: {
     title: "Виконавець",
     company: "ФОП Романюк В.А.",
-    edrpo: "ЄДРПОУ: 1234567890",
     phone: "Телефон:  +380 (96) 261 91 44",
-    email: "Email: vasiltromuyk@gmail.com",
-    address: "Адреса: [адреса компанії]",
-    note: "Виконавець зобов'язується виконати роботи якісно, у погоджені терміни та відповідно до затвердженого обсягу робіт.",
-  },
-  customer: {
-    title: "Замовник",
-    note: "Замовник підтверджує ознайомлення з попереднім обсягом робіт, умовами виконання та орієнтовною вартістю, зазначеною у даному кошторисі.",
-  },
-  terms: {
-    title: "Умови",
-    paragraphs: [
-      "Даний кошторис є попереднім розрахунком вартості робіт та матеріалів, складеним на основі наданої інформації або огляду об'єкта.",
-      "Остаточна вартість може бути уточнена після погодження всіх технічних рішень, вибору матеріалів та затвердження повного обсягу робіт.",
-      "Кошторис дійсний протягом 7 календарних днів з дати складання. Після завершення цього строку вартість матеріалів або робіт може бути переглянута.",
-      "Роботи, які не зазначені в кошторисі, оплачуються окремо після погодження із замовником.",
-      "Оплата здійснюється поетапно: аванс, проміжні платежі за виконані етапи та фінальний розрахунок після завершення робіт.",
-    ],
-  },
-  confirmation: {
-    title: "Підтвердження",
-    text: "Сторони підтверджують, що ознайомлені з умовами кошторису та погоджують попередній обсяг робіт.",
   },
 };
 
@@ -57,25 +34,6 @@ const formatAmount = (amount, unit) => {
 
   return [amount, amountUnit].filter(Boolean).join(" ");
 };
-
-const getValueOrPlaceholder = (value, placeholder) => value?.trim() || placeholder;
-
-const formatCustomerDetails = (customer = {}) => ({
-  name: `ПІБ / Назва компанії: ${getValueOrPlaceholder(
-    customer.name,
-    "[ім'я або назва]"
-  )}`,
-  phone: `Телефон: ${getValueOrPlaceholder(customer.phone, "[номер телефону]")}`,
-  email: `Email: ${getValueOrPlaceholder(customer.email, "[email]")}`,
-  address: `Адреса об'єкта: ${getValueOrPlaceholder(
-    customer.objectAddress,
-    "[адреса виконання робіт]"
-  )}`,
-  object: `Об'єкт: ${getValueOrPlaceholder(
-    customer.objectAddress,
-    "_________________"
-  )}`,
-});
 
 const readRowsFromJobs = (jobs) =>
   jobs.map((job, rowIndex) => {
@@ -133,14 +91,12 @@ const appendDetailRows = (section, rows) => {
   });
 };
 
-const createDetailsSection = (customerDetails) => {
+const createDetailsSection = () => {
   const details = createElement("section", "pdf-details");
 
   const meta = createElement("div", "pdf-document-meta");
   appendDetailRows(meta, [
     `Дата складання: ${new Intl.DateTimeFormat("uk-UA").format(new Date())}`,
-    `Кошторис №: ${PDF_DETAILS.estimateNumber}`,
-    customerDetails.object,
   ]);
   details.appendChild(meta);
 
@@ -148,48 +104,14 @@ const createDetailsSection = (customerDetails) => {
   contractor.appendChild(createElement("h2", "pdf-detail-title", PDF_DETAILS.contractor.title));
   appendDetailRows(contractor, [
     PDF_DETAILS.contractor.company,
-    PDF_DETAILS.contractor.edrpo,
     PDF_DETAILS.contractor.phone,
-    PDF_DETAILS.contractor.email,
-    PDF_DETAILS.contractor.address,
-    PDF_DETAILS.contractor.note,
   ]);
   details.appendChild(contractor);
-
-  const customer = createElement("div", "pdf-detail-card");
-  customer.appendChild(createElement("h2", "pdf-detail-title", PDF_DETAILS.customer.title));
-  appendDetailRows(customer, [
-    customerDetails.name,
-    customerDetails.phone,
-    customerDetails.email,
-    customerDetails.address,
-    PDF_DETAILS.customer.note,
-  ]);
-  details.appendChild(customer);
-
-  const terms = createElement("div", "pdf-detail-card pdf-detail-card-wide");
-  terms.appendChild(createElement("h2", "pdf-detail-title", PDF_DETAILS.terms.title));
-  appendDetailRows(terms, PDF_DETAILS.terms.paragraphs);
-  details.appendChild(terms);
 
   return details;
 };
 
 const createSectionTitle = (title) => createElement("h2", "pdf-section-title", title);
-
-const createConfirmationSection = () => {
-  const confirmation = createElement("section", "pdf-confirmation");
-
-  confirmation.appendChild(createSectionTitle(PDF_DETAILS.confirmation.title));
-  confirmation.appendChild(createElement("p", "pdf-confirmation-text", PDF_DETAILS.confirmation.text));
-
-  const signatures = createElement("div", "pdf-signatures");
-  signatures.appendChild(createElement("p", "", "Виконавець: ____________________"));
-  signatures.appendChild(createElement("p", "", "Замовник: ____________________"));
-  confirmation.appendChild(signatures);
-
-  return confirmation;
-};
 
 const createPdfStyles = () => {
   const style = document.createElement("style");
@@ -255,11 +177,6 @@ const createPdfStyles = () => {
       background: #ffffff;
     }
 
-    .pdf-detail-card-wide {
-      grid-column: 1 / -1;
-      min-height: auto;
-    }
-
     .pdf-detail-title {
       margin: 0 0 4px;
       font-size: 10px;
@@ -320,12 +237,11 @@ const createPdfStyles = () => {
     .pdf-table td:first-child,
     .pdf-table th:first-child,
     .pdf-table td:nth-child(5),
-    .pdf-table td:nth-child(6),
-    .pdf-table td:nth-child(7) {
+    .pdf-table td:nth-child(4) {
       text-align: right;
     }
 
-    .pdf-table td:nth-child(7) {
+    .pdf-table td:nth-child(5) {
       font-weight: 700;
       color: #0f7b46;
     }
@@ -345,38 +261,12 @@ const createPdfStyles = () => {
       color: #0f7b46;
       text-align: right;
     }
-
-    .pdf-confirmation {
-      margin-top: 14px;
-      padding-top: 8px;
-      border-top: 1px solid #cfd6df;
-      break-inside: avoid;
-    }
-
-    .pdf-confirmation-text {
-      margin: 0 0 14px;
-      font-size: 9px;
-      line-height: 1.4;
-      color: #374151;
-    }
-
-    .pdf-signatures {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 24px;
-      font-size: 11px;
-      color: #111827;
-    }
-
-    .pdf-signatures p {
-      margin: 0;
-    }
   `;
 
   return style;
 };
 
-export const buildPdfTable = ({ jobs = [], customer = {}, tableWrapper, totalPrice }) => {
+export const buildPdfTable = ({ jobs = [], tableWrapper, totalPrice }) => {
   const sourceTable = tableWrapper?.querySelector("table");
 
   if (!jobs.length && !sourceTable) {
@@ -384,14 +274,13 @@ export const buildPdfTable = ({ jobs = [], customer = {}, tableWrapper, totalPri
   }
 
   const pdfRoot = createElement("div", "pdf-estimate");
-  const customerDetails = formatCustomerDetails(customer);
 
   pdfRoot.appendChild(createPdfStyles());
 
   const header = createElement("header", "pdf-header");
   header.appendChild(createElement("h1", "pdf-title", PDF_DETAILS.title));
   pdfRoot.appendChild(header);
-  pdfRoot.appendChild(createDetailsSection(customerDetails));
+  pdfRoot.appendChild(createDetailsSection());
   pdfRoot.appendChild(createSectionTitle("Кошторис"));
 
   const table = createElement("table", "pdf-table");
@@ -434,7 +323,6 @@ export const buildPdfTable = ({ jobs = [], customer = {}, tableWrapper, totalPri
   const total = createElement("div", "pdf-total", "Загальна ціна:");
   total.appendChild(createElement("span", "", `${totalPrice.toFixed(2)} ₴`));
   pdfRoot.appendChild(total);
-  pdfRoot.appendChild(createConfirmationSection());
 
   return pdfRoot;
 };
