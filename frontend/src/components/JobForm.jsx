@@ -164,22 +164,24 @@ const JobForm = ({ categories, onAddJob }) => {
   const handleSubmit = useCallback((e) => {
     e.preventDefault();
 
-    if (!categoryId || !subcategoryName || !taskName || !area || area === '0' || !price) {
-      alert('Будь ласка, заповніть всі поля');
+    if (!taskName.trim()) {
+      alert('Будь ласка, введіть назву роботи');
       return;
     }
 
     const selectedCategory = categories.find(cat => cat.id === parseInt(categoryId));
+    const parsedPrice = parseFloat(price) || 0;
+    const parsedArea = parseFloat(area) || 0;
 
     const jobData = {
       id: Date.now(),
-      categoryName: selectedCategory?.name,
+      categoryName: selectedCategory?.name || '',
       subcategoryName: subcategoryName,
-      taskName: taskName,
-      price: parseFloat(price),
+      taskName: taskName.trim(),
+      price: parsedPrice,
       unit,
-      area: parseFloat(area),
-      finalPrice: parseFloat(price) * parseFloat(area)
+      area: parsedArea,
+      finalPrice: parsedPrice * parsedArea
     };
 
     onAddJob(jobData);
@@ -205,7 +207,6 @@ const JobForm = ({ categories, onAddJob }) => {
           id="category"
           value={categoryId}
           onChange={handleCategoryChange}
-          required
         >
           <option value="">-- Виберіть категорію --</option>
           {categories.map(cat => (
@@ -223,8 +224,6 @@ const JobForm = ({ categories, onAddJob }) => {
           value={subcategoryName}
           onChange={handleSubcategoryChange}
           placeholder="Виберіть або введіть підкатегорію"
-          required
-          disabled={!categoryId}
         />
         <datalist id="subcategory-list">
           {subcategories.map(sub => (
@@ -242,8 +241,6 @@ const JobForm = ({ categories, onAddJob }) => {
           value={taskName}
           onChange={handleTaskChange}
           placeholder="Виберіть або введіть роботу"
-          required
-          disabled={!subcategoryName}
         />
         <datalist id="task-list">
           {tasks.map(task => (
@@ -263,7 +260,6 @@ const JobForm = ({ categories, onAddJob }) => {
             value={price}
             onChange={handlePriceChange}
             placeholder="Введіть ціну"
-            required
           />
           {unit && <span className="price-unit">{unit}</span>}
         </div>
@@ -279,7 +275,6 @@ const JobForm = ({ categories, onAddJob }) => {
           value={area}
           onChange={handleAreaChange}
           placeholder="Введіть число"
-          required
         />
       </div>
 

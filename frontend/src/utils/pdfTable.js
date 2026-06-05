@@ -1,5 +1,5 @@
 const PDF_COLUMNS = [
-  { title: "#", sourceIndex: null, width: "5%" },
+  { title: "№", sourceIndex: null, width: "5%" },
   { title: "Найменування робіт, послуг", sourceIndex: 2, width: "47%" },
   { title: "Ціна", sourceIndex: 3, width: "16%" },
   { title: "Кількість", sourceIndex: 4, width: "14%" },
@@ -7,11 +7,14 @@ const PDF_COLUMNS = [
 ];
 
 const PDF_DETAILS = {
-  title: "Кошторис на виконання будівельних робіт",
+  title: "Акт виконаних робіт",
   contractor: {
     title: "Виконавець",
     company: "ФОП Романюк В.А.",
+    edrpo: "ЄДРПОУ: 2978904693",
+    iban: 'IBAN: UA403052990262036400953143706',
     phone: "Телефон:  +380 (96) 261 91 44",
+    email: "Email: vasiltromuyk@gmail.com",
   },
 };
 
@@ -104,7 +107,12 @@ const createDetailsSection = () => {
   contractor.appendChild(createElement("h2", "pdf-detail-title", PDF_DETAILS.contractor.title));
   appendDetailRows(contractor, [
     PDF_DETAILS.contractor.company,
+    PDF_DETAILS.contractor.edrpo,
+    PDF_DETAILS.contractor.iban,
     PDF_DETAILS.contractor.phone,
+    PDF_DETAILS.contractor.email,
+    PDF_DETAILS.contractor.address,
+    PDF_DETAILS.contractor.note,
   ]);
   details.appendChild(contractor);
 
@@ -281,7 +289,6 @@ export const buildPdfTable = ({ jobs = [], tableWrapper, totalPrice }) => {
   header.appendChild(createElement("h1", "pdf-title", PDF_DETAILS.title));
   pdfRoot.appendChild(header);
   pdfRoot.appendChild(createDetailsSection());
-  pdfRoot.appendChild(createSectionTitle("Кошторис"));
 
   const table = createElement("table", "pdf-table");
   const colgroup = document.createElement("colgroup");
@@ -320,7 +327,7 @@ export const buildPdfTable = ({ jobs = [], tableWrapper, totalPrice }) => {
   table.appendChild(tbody);
   pdfRoot.appendChild(table);
 
-  const total = createElement("div", "pdf-total", "Загальна ціна:");
+  const total = createElement("div", "pdf-total", "Загальна сума:");
   total.appendChild(createElement("span", "", `${totalPrice.toFixed(2)} ₴`));
   pdfRoot.appendChild(total);
 
