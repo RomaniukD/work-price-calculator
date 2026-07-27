@@ -1,5 +1,23 @@
 import './JobTable.css';
 
+const getAmountUnit = (unit = '') => {
+  if (!unit) return '';
+  if (unit.includes('/')) return unit.split('/').slice(1).join('/').trim();
+
+  return unit.replace(/^грн\s*/i, '').trim();
+};
+
+const formatPrice = (price, unit) => {
+  const amountUnit = getAmountUnit(unit);
+
+  return [`${price} ₴`, amountUnit ? `/ ${amountUnit}` : '']
+    .filter(Boolean)
+    .join(' ');
+};
+
+const formatAmount = (amount, unit) =>
+  [amount, getAmountUnit(unit)].filter(Boolean).join(' ');
+
 const JobTable = ({ jobs, onDeleteJob }) => {
   const totalPrice = jobs.reduce((sum, job) => sum + job.finalPrice, 0);
 
@@ -26,8 +44,8 @@ const JobTable = ({ jobs, onDeleteJob }) => {
                     <td>{job.categoryName}</td>
                     <td>{job.subcategoryName}</td>
                     <td>{job.taskName}</td>
-                    <td>{job.price} ₴</td>
-                    <td>{job.area}</td>
+                    <td>{formatPrice(job.price, job.unit)}</td>
+                    <td>{formatAmount(job.area, job.unit)}</td>
                     <td className="final-price">{job.finalPrice.toFixed(2)} ₴</td>
                     <td>
                       <button

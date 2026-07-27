@@ -8,6 +8,15 @@ import "./PriceCalculator.css";
 
 const JOBS_STORAGE_KEY = "priceCalculator.jobs";
 
+const formatPdfFileDate = (date = new Date()) =>
+  new Intl.DateTimeFormat("uk-UA", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+    .format(date)
+    .replace(/\./g, "-");
+
 const readStorageValue = (key, fallbackValue) => {
   try {
     const storedValue = localStorage.getItem(key);
@@ -72,7 +81,7 @@ const PriceCalculator = () => {
 
       const options = {
         margin: [10, 10, 10, 10],
-        filename: "akt.pdf",
+        filename: `Акт робіт ${formatPdfFileDate()}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: {

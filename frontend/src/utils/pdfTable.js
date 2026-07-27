@@ -30,13 +30,7 @@ const formatMoney = (value) => {
   return number.toFixed(2);
 };
 
-const getAmountUnit = (unit) => unit?.split("/")[1]?.trim() || "";
-
-const formatAmount = (amount, unit) => {
-  const amountUnit = getAmountUnit(unit);
-
-  return [amount, amountUnit].filter(Boolean).join(" ");
-};
+const formatAmount = (amount) => (amount ?? "").toString();
 
 const readRowsFromJobs = (jobs) =>
   jobs.map((job, rowIndex) => {
@@ -45,7 +39,7 @@ const readRowsFromJobs = (jobs) =>
       job.subcategoryName || "",
       job.taskName || "",
       [formatMoney(job.price), job.unit].filter(Boolean).join(" "),
-      formatAmount(job.area, job.unit),
+      formatAmount(job.area),
       `${formatMoney(job.finalPrice)} ₴`,
     ];
 
@@ -69,7 +63,13 @@ const readRowsFromHtmlTable = (tableElement) => {
         return String(rowIndex + 1);
       }
 
-      return getCellText(cells[column.sourceIndex]);
+      const cellText = getCellText(cells[column.sourceIndex]);
+
+      if (column.title === "Кількість") {
+        return cellText.split(" ")[0] || "";
+      }
+
+      return cellText;
     });
   });
 };
@@ -118,8 +118,6 @@ const createDetailsSection = () => {
 
   return details;
 };
-
-const createSectionTitle = (title) => createElement("h2", "pdf-section-title", title);
 
 const createPdfStyles = () => {
   const style = document.createElement("style");
